@@ -1,0 +1,50 @@
+FROM alpine:latest
+
+ARG AGENT_NAME=PYTHON_AGENT
+ARG PRODUCT_NAME=apminsight
+ARG EXPORTER=S247DataExporter
+ARG STATIC_URL=https://staticdownloads.site24x7.com/apminsight/S247DataExporter/
+ARG STATIC_DOMAIN=https://staticdownloads.site24x7.com/
+
+ARG TARGETPLATFORM
+# Output the target platform information
+RUN echo "OS and Architecture: $TARGETPLATFORM"
+
+
+RUN apk update && apk upgrade --no-cache && apk add wget unzip procps
+RUN apk --no-cache add coreutils
+
+RUN mkdir /opt/site24x7/
+WORKDIR /opt/site24x7/
+
+RUN wget -O ${EXPORTER}.zip ${STATIC_URL}${TARGETPLATFORM}/${EXPORTER}.zip
+RUN unzip S247DataExporter.zip
+
+COPY agent_start.sh .
+
+# RUN The below command in terminal to generate wheelfiles before creating docker image
+# python -m pip install wheel
+# python -m pip wheel --wheel-dir=wheels apminsight
+
+# Copy the entire apminsight-agentpython directory structure
+COPY apminsight-agentpython/ apminsight-agentpython/
+
+# Extract the appropriate zip file based on platform
+RUN case "$TARGETPLATFORM" in \
+        "linux/amd64") \
+            cp apminsight-agentpython/linux/glibc/amd64/apm_insight_agent_python.zip . ;; \
+        "linux/arm64") \
+            cp apminsight-agentpython/linux/glibc/arm64/apm_insight_agent_python.zip . ;; \
+        "linux/386") \
+            cp apminsight-agentpython/linux/glibc/386/apm_insight_agent_python.zip . ;; \
+        *) \
+            echo "Unsupported platform: $TARGETPLATFORM" && exit 1;; \
+    esac && \
+    echo "Successfully extracted agent for platform: $TARGETPLATFORM"
+
+RUN unzip apm_insight_agent_python.zip
+
+RUN chmod -R 777 /opt/site24x7/
+
+CMD [ "echo", "Python Installation scripts and files moved successfully" ]
+

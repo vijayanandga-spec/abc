@@ -1,0 +1,5 @@
+#!/usr/bin/env python
+
+import apminsight
+
+apminsight.apm_run.main()
