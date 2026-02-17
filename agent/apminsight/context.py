@@ -4,7 +4,6 @@ from apminsight import constants
 
 
 def get_thread_local():
-    global thread_local
     try:
         import gevent
         if 'gevent' in sys.modules:
